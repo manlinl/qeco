@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+
+package qeco.apis.kns.v1;
+
+option go_package = "qeco.dev/apis/kns/v1;v1";
+
+service NameService {
+  rpc Register(stream RegisterRequest) returns (stream RegisterResponse);
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+}
+
+message RegisterRequest {
+  string name = 1;
+  string address = 2;
+}
+
+message RegisterResponse {
+  google.protobuf.Duration ttl = 1;
+}
+
+message ResolveRequest {
+  string name = 1;
+}
+
+message ResolveResponse {
+  string name = 1;
+  repeated string addresses = 2;
+}
