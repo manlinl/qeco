@@ -22,7 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NameServiceClient interface {
+	// Register() registers a DNS record.
 	Register(ctx context.Context, opts ...grpc.CallOption) (NameService_RegisterClient, error)
+	// Resolve() resolves a DNS name to IP addresses.
 	Resolve(ctx context.Context, in *ResolveRequest, opts ...grpc.CallOption) (*ResolveResponse, error)
 }
 
@@ -78,7 +80,9 @@ func (c *nameServiceClient) Resolve(ctx context.Context, in *ResolveRequest, opt
 // All implementations must embed UnimplementedNameServiceServer
 // for forward compatibility
 type NameServiceServer interface {
+	// Register() registers a DNS record.
 	Register(NameService_RegisterServer) error
+	// Resolve() resolves a DNS name to IP addresses.
 	Resolve(context.Context, *ResolveRequest) (*ResolveResponse, error)
 	mustEmbedUnimplementedNameServiceServer()
 }

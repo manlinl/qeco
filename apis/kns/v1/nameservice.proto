@@ -6,8 +6,12 @@ package qeco.apis.kns.v1;
 
 option go_package = "qeco.dev/apis/kns/v1;v1";
 
+// KNS name service definition.
 service NameService {
+  // Register() registers a DNS record.
   rpc Register(stream RegisterRequest) returns (stream RegisterResponse);
+
+  // Resolve() resolves a DNS name to IP addresses.
   rpc Resolve(ResolveRequest) returns (ResolveResponse);
 }
 
