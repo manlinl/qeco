@@ -8,27 +8,50 @@ option go_package = "qeco.dev/apis/kns/v1;v1";
 
 // KNS name service definition.
 service NameService {
-  // Register() registers a DNS record.
+  // Register a DNS record.
   rpc Register(stream RegisterRequest) returns (stream RegisterResponse);
 
-  // Resolve() resolves a DNS name to IP addresses.
+  // Resolve a DNS name to a list of IP addresses.
   rpc Resolve(ResolveRequest) returns (ResolveResponse);
 }
 
+// Register method request.
 message RegisterRequest {
-  string name = 1;
-  string address = 2;
+  // Specifies id returned in `RegisterResponse`. It must be empty in the first request, and
+  // non-empty in the subsequent requests.
+  string id = 1;
+
+  // DNS name to register to the name service.
+  string name = 2;
+
+  // IP address to back the DNS name.
+  string address = 3;
 }
 
+// Register method response.
 message RegisterResponse {
-  google.protobuf.Duration ttl = 1;
+  // An immutable request ID associated with this Register streaming call.
+  string id = 1;
+
+  // TTL indicates to clients the deadline to send next RegisterRequest upon receiving this
+  // RegisterResponse.
+  google.protobuf.Duration ttl = 2;
 }
 
+// Resolve method request.
 message ResolveRequest {
+  // DNS name to resolve.
   string name = 1;
 }
 
+// Resolve method response.
 message ResolveResponse {
+  // Identical to the name field in ResolveRequest.
   string name = 1;
+
+  // Resolved IP addresses.
   repeated string addresses = 2;
+
+  // ttl indicates the maximum period the addresses are considered valid.
+  google.protobuf.Duration ttl = 3;
 }

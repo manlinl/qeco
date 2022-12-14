@@ -4,5 +4,6 @@ BasedOnStyle: Google
 ---
 Language: Proto
 BasedOnStyle: Google
+ColumnLimit: 100
 ...
 
