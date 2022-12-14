@@ -1,4 +1,6 @@
 .*
+kns/cmd/kns-agent/kns-agent
+kns/cmd/kns-server/kns-server
 !.clang-format
 !.gitignore
 
