@@ -6,7 +6,7 @@ type (
 	KVStore interface {
 		Set(kv KV, ttl time.Duration) error
 		Get(key string) (value string, err error)
-		Del(key string) bool
+		Del(key string)
 		Watch(prefix string) (<-chan KV, CancelFn, error)
 	}
 

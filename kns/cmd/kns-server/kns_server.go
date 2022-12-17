@@ -69,7 +69,7 @@ func startKNSServer() *grpc.Server {
 
 	srv := grpc.NewServer(grpcOptions...)
 	reflection.Register(srv)
-	pb.RegisterNameServiceServer(srv, kns.NewNameServiceImpl(*ttl, &kns.MemStorage{}))
+	pb.RegisterNameServiceServer(srv, kns.NewNameServiceImpl(*ttl, &kns.MemKVStore{}))
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {

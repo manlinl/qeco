@@ -7,6 +7,7 @@ import (
 
 	pb "qeco.dev/apis/kns/v1"
 	"qeco.dev/kns/pkg"
+	"qeco.dev/pkg/errs/grpcext"
 )
 
 type NameServiceImpl struct {
@@ -23,5 +24,6 @@ func NewNameServiceImpl(ttl time.Duration, storage pkg.KVStore) *NameServiceImpl
 }
 
 func (s *NameServiceImpl) Register(stream pb.NameService_RegisterServer) error {
-	return NewRegisterStream(uuid.New().String(), stream, s.ttl, s.storage).Process()
+	err := NewRegisterStream(uuid.New().String(), stream, s.ttl, s.storage).Process()
+	return grpcext.GRPCErrorAdapter(err)
 }
