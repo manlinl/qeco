@@ -3,6 +3,7 @@ package kns
 import (
 	"time"
 
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"k8s.io/klog/v2"
 
@@ -49,7 +50,7 @@ func (r *RegisterStream) Process() error {
 		select {
 		case <-strCtx.Done():
 			klog.V(4).InfoS("Stream context done", "stream", r.id, "err", strCtx.Err())
-			return strCtx.Err()
+			return status.FromContextError(strCtx.Err()).Err()
 		case <-r.reqCh:
 			klog.V(3).InfoS("Receive RegisterRequest", "stream", r.id)
 			if err := r.sendRegisterResponse(); err != nil {

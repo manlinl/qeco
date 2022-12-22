@@ -58,6 +58,6 @@ func (f *MemKVStore) Del(key string) {
 	delete(f.kvs, key)
 }
 
-func (f *MemKVStore) Watch(prefix string) (<-chan pkg.KV, pkg.CancelFn, error) {
+func (f *MemKVStore) Watch(prefix string) (<-chan *pkg.KVChangeEvent, pkg.WatchCancelFn, error) {
 	return nil, nil, nil
 }
