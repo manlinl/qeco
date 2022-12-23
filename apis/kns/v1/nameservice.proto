@@ -13,6 +13,9 @@ service NameService {
 
   // Resolve a DNS name to a list of IP addresses.
   rpc Resolve(ResolveRequest) returns (ResolveResponse);
+
+  // StreamResolve allows caller to continuously subscribe/unsubscribe names to resolve.
+  rpc StreamingResolve(stream StreamingResolveRequest) returns (stream StreamingResolveResponse);
 }
 
 // Register method request.
@@ -53,5 +56,43 @@ message ResolveResponse {
   repeated string addresses = 2;
 
   // ttl indicates the maximum period the addresses are considered valid.
+  google.protobuf.Duration ttl = 3;
+}
+
+enum StreamResolveOption {
+  // Default value. Shall never be used.
+  STREAM_RESOLVE_OPTION_UNSPECIFIED = 0;
+
+  // Resolve names in `names_subscribe` fields.
+  STREAM_RESOLVE_OPTION_DELTA = 1;
+
+  // Return resolution results for all names subscribed by this stream.
+  STREAM_RESOLVE_OPTION_ALL = 2;
+}
+
+// StreamingResolve method request.
+message StreamingResolveRequest {
+  // Resolve option of this request.
+  StreamResolveOption option = 1;
+
+  // Names to subscribe. The callee must include the name resolution results for any name included
+  // in this field.
+  repeated string names_subscribe = 2;
+
+  // Names to unsubscribe.
+  repeated string names_unsubscribes = 3;
+}
+
+// StreamResolve method Response.
+message StreamingResolveResponse {
+  // Indicates resolve option in corresponding StreamingResolveRequest.
+  StreamResolveOption option = 1;
+
+  repeated ResolutionUpdate updates = 2;
+}
+
+message ResolutionUpdate {
+  string name = 1;
+  repeated string addresses = 2;
   google.protobuf.Duration ttl = 3;
 }
