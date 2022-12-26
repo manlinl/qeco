@@ -2,10 +2,10 @@ package kns
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	pb "qeco.dev/apis/kns/v1"
 	"qeco.dev/kns/pkg"
@@ -15,19 +15,24 @@ import (
 
 type NameServiceImpl struct {
 	pb.UnimplementedNameServiceServer
-	ttl     time.Duration
-	storage pkg.KVStore
+	ttl             time.Duration
+	backend         pkg.KNSBackend
+	resolver        *Resolver
+	resolveStreamId int64
 }
 
-func NewNameServiceImpl(ttl time.Duration, storage pkg.KVStore) *NameServiceImpl {
+func NewNameServiceImpl(ttl time.Duration, backend pkg.KNSBackend,
+	option ResolverOption) *NameServiceImpl {
 	return &NameServiceImpl{
-		ttl:     ttl,
-		storage: storage,
+		ttl:             ttl,
+		backend:         backend,
+		resolver:        NewResolver(backend, option),
+		resolveStreamId: 0,
 	}
 }
 
 func (s *NameServiceImpl) Register(stream pb.NameService_RegisterServer) error {
-	err := NewRegisterStream(uuid.New().String(), stream, s.ttl, s.storage).Process()
+	err := NewRegisterStream(uuid.New().String(), stream, s.ttl, s.backend).Process()
 	return grpcext.GRPCErrorAdapter(err)
 }
 
@@ -39,13 +44,20 @@ func (s *NameServiceImpl) Resolve(ctx context.Context,
 			"ResolveRequest must not have empty name field")
 	}
 
-	value, err := s.storage.Get(name)
+	result, err := s.backend.Resolve(name)
 	if err != nil {
 		return nil, err
 	}
 	return &pb.ResolveResponse{
-		Name:      name,
-		Addresses: []string{value},
-		Ttl:       durationpb.New(s.ttl),
+		Result: result,
 	}, nil
+}
+
+func (s *NameServiceImpl) StreamingResolve(stream pb.NameService_StreamingResolveServer) error {
+	err := NewResolveStream(s.nextResolveStreamID(), s.resolver, stream).Process()
+	return grpcext.GRPCErrorAdapter(err)
+}
+
+func (s *NameServiceImpl) nextResolveStreamID() int64 {
+	return atomic.AddInt64(&s.resolveStreamId, 1)
 }

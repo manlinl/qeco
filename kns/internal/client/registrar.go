@@ -6,11 +6,10 @@ import (
 	"net/netip"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/klog/v2"
 
 	"github.com/cenkalti/backoff/v4"
-
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	pb "qeco.dev/apis/kns/v1"
 )
@@ -55,9 +54,12 @@ func (r *Registrar) registerImpl(ctx context.Context) error {
 	return NewRegisterClientStream(stream, r.ksnName, r.ip).Process()
 }
 
-func computeTimerDuration(ttl *durationpb.Duration) time.Duration {
-	d := ttl.AsDuration()
-	return d / 2.0
+func computeTimerDuration(ttl *timestamppb.Timestamp) time.Duration {
+	ttlTime := ttl.AsTime()
+	if ttlTime.Before(time.Now()) {
+		return 1 * time.Second
+	}
+	return ttlTime.Sub(time.Now()) / 2.0
 }
 
 func getExponentialBackOff() *backoff.ExponentialBackOff {

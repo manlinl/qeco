@@ -4,33 +4,40 @@ import (
 	"time"
 
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/klog/v2"
 
 	pb "qeco.dev/apis/kns/v1"
 	"qeco.dev/kns/pkg"
 )
 
-type RegisterStream struct {
-	stream  pb.NameService_RegisterServer
-	ttl     time.Duration
-	storage pkg.KVStore
-	id      string
-	reqCh   chan *pb.RegisterRequest
-	errCh   chan error
-	kv      *pkg.KV
-}
+type (
+	RegisterStream struct {
+		stream  pb.NameService_RegisterServer
+		ttl     time.Duration
+		backend pkg.KNSBackend
+		id      string
+		reqCh   chan *pb.RegisterRequest
+		errCh   chan error
+		record  *nameRecord
+	}
+
+	nameRecord struct {
+		name    string
+		address string
+	}
+)
 
 func NewRegisterStream(id string, stream pb.NameService_RegisterServer,
-	ttl time.Duration, storage pkg.KVStore) *RegisterStream {
+	ttl time.Duration, backend pkg.KNSBackend) *RegisterStream {
 	return &RegisterStream{
 		id:      id,
 		stream:  stream,
 		ttl:     ttl,
-		storage: storage,
+		backend: backend,
 		reqCh:   make(chan *pb.RegisterRequest),
 		errCh:   make(chan error, 1),
-		kv:      nil,
+		record:  nil,
 	}
 }
 
@@ -81,9 +88,9 @@ func (r *RegisterStream) receiveRequests() {
 func (r *RegisterStream) handleFirstRequest() error {
 	select {
 	case req := <-r.reqCh:
-		r.kv = &pkg.KV{
-			Key:   req.GetName(),
-			Value: req.GetAddress(),
+		r.record = &nameRecord{
+			name:    req.GetName(),
+			address: req.GetAddress(),
 		}
 		return r.sendRegisterResponse()
 	case err := <-r.errCh:
@@ -92,12 +99,12 @@ func (r *RegisterStream) handleFirstRequest() error {
 }
 
 func (r *RegisterStream) sendRegisterResponse() (err error) {
-	if err = r.storage.Set(*r.kv, r.ttl); err != nil {
+	if err = r.backend.Register(r.record.name, r.record.address, r.ttl); err != nil {
 		return
 	}
 	resp := pb.RegisterResponse{
 		Id:  r.id,
-		Ttl: durationpb.New(r.ttl),
+		Ttl: timestamppb.New(time.Now().Add(r.ttl)),
 	}
 	if err = r.stream.Send(&resp); err != nil {
 		return

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
-import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
 
 package qeco.apis.kns.v1;
 
@@ -36,9 +37,8 @@ message RegisterResponse {
   // An immutable request ID associated with this Register streaming call.
   string id = 1;
 
-  // TTL indicates to clients the deadline to send next RegisterRequest upon receiving this
-  // RegisterResponse.
-  google.protobuf.Duration ttl = 2;
+  // TTL indicates to clients the deadline to send next RegisterRequest.
+  google.protobuf.Timestamp ttl = 2;
 }
 
 // Resolve method request.
@@ -49,14 +49,7 @@ message ResolveRequest {
 
 // Resolve method response.
 message ResolveResponse {
-  // Identical to the name field in ResolveRequest.
-  string name = 1;
-
-  // Resolved IP addresses.
-  repeated string addresses = 2;
-
-  // ttl indicates the maximum period the addresses are considered valid.
-  google.protobuf.Duration ttl = 3;
+  ResolutionResult result = 1;
 }
 
 enum StreamResolveOption {
@@ -88,11 +81,16 @@ message StreamingResolveResponse {
   // Indicates resolve option in corresponding StreamingResolveRequest.
   StreamResolveOption option = 1;
 
-  repeated ResolutionUpdate updates = 2;
+  repeated ResolutionResult updates = 2;
 }
 
-message ResolutionUpdate {
+message ResolutionResult {
   string name = 1;
-  repeated string addresses = 2;
-  google.protobuf.Duration ttl = 3;
+
+  // Non-null `status` indicates resolution failure, and `addresses` and `ttl` fields shall be
+  // ignored.
+  google.rpc.Status status = 2;
+
+  repeated string addresses = 3;
+  google.protobuf.Timestamp ttl = 4;
 }

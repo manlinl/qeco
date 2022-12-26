@@ -13,6 +13,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+
+	"qeco.dev/kns/internal/backends/mem"
 	"qeco.dev/pkg/base"
 
 	"k8s.io/klog/v2"
@@ -32,7 +34,12 @@ const (
 
 var (
 	port = flag.Int("port", 9290, "Kns server gRPC service port.")
-	ttl  = flag.Duration("heart_beat_ttl", 10*time.Second, "Heart beat TTL for Register method.")
+	ttl  = flag.Duration("heart_beat_ttl", 10*time.Second,
+		"Heart beat TTL for Register method.")
+	listenerWorkers = flag.Int("resolver_listener_workers", 2,
+		"Number of background worker listening to backend update notification.")
+	notificationWorkers = flag.Int("resolver_notification_workers", 4,
+		"Number of background workers notifying to resolve streams on name resolution changes.")
 )
 
 func main() {
@@ -69,7 +76,13 @@ func startKNSServer() *grpc.Server {
 
 	srv := grpc.NewServer(grpcOptions...)
 	reflection.Register(srv)
-	pb.RegisterNameServiceServer(srv, kns.NewNameServiceImpl(*ttl, &kns.MemKVStore{}))
+	pb.RegisterNameServiceServer(srv, kns.NewNameServiceImpl(*ttl, mem.NewInMemBackend(),
+		kns.ResolverOption{
+			ListenerWorkerCount:            *listenerWorkers,
+			NotificationWorkerCount:        *notificationWorkers,
+			NotificationChannelBufferSize:  10,
+			NotificationChannelSendTimeout: 5 * time.Second,
+		}))
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
