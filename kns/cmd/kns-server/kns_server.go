@@ -16,8 +16,8 @@ import (
 	"k8s.io/klog/v2"
 
 	pb "qeco.dev/apis/kns/v1"
-	"qeco.dev/kns/internal/backends/mem"
 	"qeco.dev/kns/internal/kns"
+	"qeco.dev/kns/internal/kns/backends/mem"
 	"qeco.dev/pkg/base"
 	"qeco.dev/pkg/debug"
 	_ "qeco.dev/pkg/debug"
