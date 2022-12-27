@@ -6,7 +6,7 @@ import (
 	pb "qeco.dev/apis/kns/v1"
 )
 
-type ResolveStream struct {
+type ResolveServerStream struct {
 	id       int64
 	resolver *Resolver
 	stream   pb.NameService_StreamingResolveServer
@@ -14,9 +14,9 @@ type ResolveStream struct {
 	errCh    chan error
 }
 
-func NewResolveStream(id int64, resolver *Resolver,
-	stream pb.NameService_StreamingResolveServer) *ResolveStream {
-	return &ResolveStream{
+func NewResolveServerStream(id int64, resolver *Resolver,
+	stream pb.NameService_StreamingResolveServer) *ResolveServerStream {
+	return &ResolveServerStream{
 		id:       id,
 		resolver: resolver,
 		stream:   stream,
@@ -25,47 +25,47 @@ func NewResolveStream(id int64, resolver *Resolver,
 	}
 }
 
-func (r *ResolveStream) Process() error {
-	notifyCh := r.resolver.Register(r.id)
-	defer r.resolver.Deregister(r.id)
+func (s *ResolveServerStream) Process() error {
+	notifyCh := s.resolver.Register(s.id)
+	defer s.resolver.Deregister(s.id)
 
 	// Start to receive StreamingResolveRequest on a background Goroutine.
-	go r.receiveRequests()
-	strCtx := r.stream.Context()
+	go s.receiveRequests()
+	strCtx := s.stream.Context()
 	for {
 		select {
 		case <-strCtx.Done():
 			return status.FromContextError(strCtx.Err()).Err()
-		case req := <-r.reqCh:
-			resp, err := r.generateResponse(req)
+		case req := <-s.reqCh:
+			resp, err := s.generateResponse(req)
 			if err != nil {
 				return err
 			}
-			if err := r.stream.Send(resp); err != nil {
+			if err := s.stream.Send(resp); err != nil {
 				return err
 			}
 		case resp := <-notifyCh:
-			if err := r.stream.Send(resp); err != nil {
+			if err := s.stream.Send(resp); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-func (r *ResolveStream) receiveRequests() {
+func (s *ResolveServerStream) receiveRequests() {
 	for {
-		req, err := r.stream.Recv()
+		req, err := s.stream.Recv()
 		if err != nil {
-			r.errCh <- err
+			s.errCh <- err
 			return
 		}
-		r.reqCh <- req
+		s.reqCh <- req
 	}
 }
 
-func (r *ResolveStream) generateResponse(
+func (s *ResolveServerStream) generateResponse(
 	req *pb.StreamingResolveRequest) (*pb.StreamingResolveResponse, error) {
-	updates, err := r.resolver.UpdateSubscription(r.id, req.GetNamesSubscribe(),
+	updates, err := s.resolver.UpdateSubscription(s.id, req.GetNamesSubscribe(),
 		req.GetNamesUnsubscribes(), req.Option)
 	if err != nil {
 		return nil, err

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"k8s.io/klog/v2"
+
 	pb "qeco.dev/apis/kns/v1"
 )
 

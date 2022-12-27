@@ -32,7 +32,7 @@ func NewNameServiceImpl(ttl time.Duration, backend pkg.KNSBackend,
 }
 
 func (s *NameServiceImpl) Register(stream pb.NameService_RegisterServer) error {
-	err := NewRegisterStream(uuid.New().String(), stream, s.ttl, s.backend).Process()
+	err := NewRegisterServerStream(uuid.New().String(), stream, s.ttl, s.backend).Process()
 	return grpcext.GRPCErrorAdapter(err)
 }
 
@@ -54,7 +54,7 @@ func (s *NameServiceImpl) Resolve(ctx context.Context,
 }
 
 func (s *NameServiceImpl) StreamingResolve(stream pb.NameService_StreamingResolveServer) error {
-	err := NewResolveStream(s.nextResolveStreamID(), s.resolver, stream).Process()
+	err := NewResolveServerStream(s.nextResolveStreamID(), s.resolver, stream).Process()
 	return grpcext.GRPCErrorAdapter(err)
 }
 

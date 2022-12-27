@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"time"
 
@@ -14,13 +13,12 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	"qeco.dev/kns/internal/backends/mem"
-	"qeco.dev/pkg/base"
-
 	"k8s.io/klog/v2"
 
 	pb "qeco.dev/apis/kns/v1"
+	"qeco.dev/kns/internal/backends/mem"
 	"qeco.dev/kns/internal/kns"
+	"qeco.dev/pkg/base"
 	"qeco.dev/pkg/debug"
 	_ "qeco.dev/pkg/debug"
 )
@@ -33,8 +31,8 @@ const (
 )
 
 var (
-	port = flag.Int("port", 9290, "Kns server gRPC service port.")
-	ttl  = flag.Duration("heart_beat_ttl", 10*time.Second,
+	address = flag.String("address", "tcp://:9290", "Kns server gRPC service address.")
+	ttl     = flag.Duration("heart_beat_ttl", 10*time.Second,
 		"Heart beat TTL for Register method.")
 	listenerWorkers = flag.Int("resolver_listener_workers", 2,
 		"Number of background worker listening to backend update notification.")
@@ -84,7 +82,7 @@ func startKNSServer() *grpc.Server {
 			NotificationChannelSendTimeout: 5 * time.Second,
 		}))
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen(base.MustParseAddress(*address))
 	if err != nil {
 		klog.Fatalf("Fail to create listener for KNS server %v", err)
 	}

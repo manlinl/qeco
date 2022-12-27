@@ -12,7 +12,7 @@ import (
 )
 
 type (
-	RegisterStream struct {
+	RegisterServerStream struct {
 		stream  pb.NameService_RegisterServer
 		ttl     time.Duration
 		backend pkg.KNSBackend
@@ -28,9 +28,9 @@ type (
 	}
 )
 
-func NewRegisterStream(id string, stream pb.NameService_RegisterServer,
-	ttl time.Duration, backend pkg.KNSBackend) *RegisterStream {
-	return &RegisterStream{
+func NewRegisterServerStream(id string, stream pb.NameService_RegisterServer,
+	ttl time.Duration, backend pkg.KNSBackend) *RegisterServerStream {
+	return &RegisterServerStream{
 		id:      id,
 		stream:  stream,
 		ttl:     ttl,
@@ -41,7 +41,7 @@ func NewRegisterStream(id string, stream pb.NameService_RegisterServer,
 	}
 }
 
-func (r *RegisterStream) Process() error {
+func (r *RegisterServerStream) Process() error {
 	klog.V(3).InfoS("Start processing stream", "stream", r.id)
 	defer func() {
 		klog.V(3).InfoS("Finish processing stream", "stream", r.id)
@@ -69,7 +69,7 @@ func (r *RegisterStream) Process() error {
 	}
 }
 
-func (r *RegisterStream) receiveRequests() {
+func (r *RegisterServerStream) receiveRequests() {
 	klog.V(4).InfoS("Start receiving RegisterRequest", "stream", r.id)
 	defer klog.V(4).InfoS("Finish receiving RegisterRequest", "stream", r.id)
 
@@ -85,7 +85,7 @@ func (r *RegisterStream) receiveRequests() {
 	}
 }
 
-func (r *RegisterStream) handleFirstRequest() error {
+func (r *RegisterServerStream) handleFirstRequest() error {
 	select {
 	case req := <-r.reqCh:
 		r.record = &nameRecord{
@@ -98,7 +98,7 @@ func (r *RegisterStream) handleFirstRequest() error {
 	}
 }
 
-func (r *RegisterStream) sendRegisterResponse() (err error) {
+func (r *RegisterServerStream) sendRegisterResponse() (err error) {
 	if err = r.backend.Register(r.record.name, r.record.address, r.ttl); err != nil {
 		return
 	}
