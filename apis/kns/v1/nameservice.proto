@@ -65,23 +65,30 @@ enum StreamResolveOption {
 
 // StreamingResolve method request.
 message StreamingResolveRequest {
+  // A unique positive number identifying a request.
+  int64 seq_num = 1;
+
   // Resolve option of this request.
-  StreamResolveOption option = 1;
+  StreamResolveOption option = 2;
 
   // Names to subscribe. The callee must include the name resolution results for any name included
   // in this field.
-  repeated string names_subscribe = 2;
+  repeated string names_subscribe = 3;
 
   // Names to unsubscribe.
-  repeated string names_unsubscribes = 3;
+  repeated string names_unsubscribes = 4;
 }
 
 // StreamResolve method Response.
 message StreamingResolveResponse {
-  // Indicates resolve option in corresponding StreamingResolveRequest.
-  StreamResolveOption option = 1;
+  // `seq_num` must match the corresponding request. Spontaneous responses must set `set seq_num`
+  // to 0.
+  int64 seq_num = 1;
 
-  repeated ResolutionResult updates = 2;
+  // Indicates resolve option in corresponding StreamingResolveRequest.
+  StreamResolveOption option = 2;
+
+  repeated ResolutionResult updates = 3;
 }
 
 message ResolutionResult {

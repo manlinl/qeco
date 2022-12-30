@@ -71,6 +71,7 @@ func (s *ResolveServerStream) generateResponse(
 		return nil, err
 	}
 	return &pb.StreamingResolveResponse{
+		SeqNum:  req.SeqNum,
 		Option:  req.Option,
 		Updates: updates,
 	}, nil
