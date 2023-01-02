@@ -7,7 +7,7 @@ import (
 
 	"github.com/jellydator/ttlcache/v3"
 	"google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	pb "qeco.dev/apis/kns/v1"
 	"qeco.dev/kns/pkg"
@@ -51,10 +51,10 @@ func (b *InMemBackend) ChangeEventChannel() chan pkg.ChangeEvent {
 	return b.changeEventCh
 }
 
-func (b *InMemBackend) Resolve(name string) (*pb.ResolutionResult, error) {
+func (b *InMemBackend) Resolve(name string) (*pb.ResolveResult, error) {
 	record := b.cache.Get(name)
 	if record == nil {
-		return &pb.ResolutionResult{
+		return &pb.ResolveResult{
 			Name: name,
 			Status: &status.Status{
 				Code:    int32(errs.NotFound),
@@ -62,15 +62,15 @@ func (b *InMemBackend) Resolve(name string) (*pb.ResolutionResult, error) {
 			},
 		}, nil
 	}
-	return &pb.ResolutionResult{
+	return &pb.ResolveResult{
 		Name:      name,
-		Addresses: nil,
-		Ttl:       timestamppb.New(record.ExpiresAt()),
+		Addresses: []string{record.Value()},
+		Ttl:       durationpb.New(record.ExpiresAt().Sub(time.Now())),
 	}, nil
 }
 
-func (b *InMemBackend) ResolveMultiple(names []string) ([]*pb.ResolutionResult, error) {
-	var results []*pb.ResolutionResult
+func (b *InMemBackend) ResolveMultiple(names []string) ([]*pb.ResolveResult, error) {
+	var results []*pb.ResolveResult
 	for _, name := range names {
 		result, err := b.Resolve(name)
 		if err != nil {

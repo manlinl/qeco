@@ -2,7 +2,6 @@ package kns
 
 import (
 	"context"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,19 +14,14 @@ import (
 
 type NameServiceImpl struct {
 	pb.UnimplementedNameServiceServer
-	ttl             time.Duration
-	backend         pkg.KNSBackend
-	resolver        *Resolver
-	resolveStreamId int64
+	ttl     time.Duration
+	backend pkg.KNSBackend
 }
 
-func NewNameServiceImpl(ttl time.Duration, backend pkg.KNSBackend,
-	option ResolverOption) *NameServiceImpl {
+func NewNameServiceImpl(ttl time.Duration, backend pkg.KNSBackend) *NameServiceImpl {
 	return &NameServiceImpl{
-		ttl:             ttl,
-		backend:         backend,
-		resolver:        NewResolver(backend, option),
-		resolveStreamId: 0,
+		ttl:     ttl,
+		backend: backend,
 	}
 }
 
@@ -51,13 +45,4 @@ func (s *NameServiceImpl) Resolve(ctx context.Context,
 	return &pb.ResolveResponse{
 		Result: result,
 	}, nil
-}
-
-func (s *NameServiceImpl) StreamingResolve(stream pb.NameService_StreamingResolveServer) error {
-	err := NewResolveServerStream(s.nextResolveStreamID(), s.resolver, stream).Process()
-	return grpcext.GRPCErrorAdapter(err)
-}
-
-func (s *NameServiceImpl) nextResolveStreamID() int64 {
-	return atomic.AddInt64(&s.resolveStreamId, 1)
 }

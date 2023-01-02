@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "google/rpc/status.proto";
 
 package qeco.apis.kns.v1;
@@ -14,9 +14,6 @@ service NameService {
 
   // Resolve a DNS name to a list of IP addresses.
   rpc Resolve(ResolveRequest) returns (ResolveResponse);
-
-  // StreamResolve allows caller to continuously subscribe/unsubscribe names to resolve.
-  rpc StreamingResolve(stream StreamingResolveRequest) returns (stream StreamingResolveResponse);
 }
 
 // Register method request.
@@ -38,7 +35,7 @@ message RegisterResponse {
   string id = 1;
 
   // TTL indicates to clients the deadline to send next RegisterRequest.
-  google.protobuf.Timestamp ttl = 2;
+  google.protobuf.Duration ttl = 2;
 }
 
 // Resolve method request.
@@ -49,49 +46,10 @@ message ResolveRequest {
 
 // Resolve method response.
 message ResolveResponse {
-  ResolutionResult result = 1;
+  ResolveResult result = 1;
 }
 
-enum StreamResolveOption {
-  // Default value. Shall never be used.
-  STREAM_RESOLVE_OPTION_UNSPECIFIED = 0;
-
-  // Resolve names in `names_subscribe` fields.
-  STREAM_RESOLVE_OPTION_DELTA = 1;
-
-  // Return resolution results for all names subscribed by this stream.
-  STREAM_RESOLVE_OPTION_ALL = 2;
-}
-
-// StreamingResolve method request.
-message StreamingResolveRequest {
-  // A unique positive number identifying a request.
-  int64 seq_num = 1;
-
-  // Resolve option of this request.
-  StreamResolveOption option = 2;
-
-  // Names to subscribe. The callee must include the name resolution results for any name included
-  // in this field.
-  repeated string names_subscribe = 3;
-
-  // Names to unsubscribe.
-  repeated string names_unsubscribes = 4;
-}
-
-// StreamResolve method Response.
-message StreamingResolveResponse {
-  // `seq_num` must match the corresponding request. Spontaneous responses must set `set seq_num`
-  // to 0.
-  int64 seq_num = 1;
-
-  // Indicates resolve option in corresponding StreamingResolveRequest.
-  StreamResolveOption option = 2;
-
-  repeated ResolutionResult updates = 3;
-}
-
-message ResolutionResult {
+message ResolveResult {
   string name = 1;
 
   // Non-null `status` indicates resolution failure, and `addresses` and `ttl` fields shall be
@@ -99,5 +57,5 @@ message ResolutionResult {
   google.rpc.Status status = 2;
 
   repeated string addresses = 3;
-  google.protobuf.Timestamp ttl = 4;
+  google.protobuf.Duration ttl = 4;
 }

@@ -6,7 +6,7 @@ import (
 	"net/netip"
 	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
+	mdns "github.com/miekg/dns"
 	"k8s.io/klog/v2"
 
 	"github.com/cenkalti/backoff/v4"
@@ -22,7 +22,7 @@ type Registrar struct {
 
 func NewRegistrar(name string, ip netip.Addr, knsClient pb.NameServiceClient) *Registrar {
 	return &Registrar{
-		ksnName:   name,
+		ksnName:   mdns.CanonicalName(name),
 		ip:        ip,
 		knsClient: knsClient,
 	}
@@ -52,14 +52,6 @@ func (r *Registrar) registerImpl(ctx context.Context) error {
 	}
 
 	return NewRegisterClientStream(stream, r.ksnName, r.ip).Process()
-}
-
-func computeTimerDuration(ttl *timestamppb.Timestamp) time.Duration {
-	ttlTime := ttl.AsTime()
-	if ttlTime.Before(time.Now()) {
-		return 1 * time.Second
-	}
-	return ttlTime.Sub(time.Now()) / 2.0
 }
 
 func getExponentialBackOff() *backoff.ExponentialBackOff {

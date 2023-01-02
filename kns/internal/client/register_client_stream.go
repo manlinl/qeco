@@ -29,7 +29,7 @@ func NewRegisterClientStream(stream pb.NameService_RegisterClient,
 }
 
 func (s *RegisterClientStream) Process() (err error) {
-	klog.V(4).InfoS("Start Register stream", "stream", s.stream)
+	klog.V(4).InfoS("Run Register stream", "stream", s.stream)
 	defer klog.V(4).InfoS("Finish Register stream", "stream", s.stream, "error", err)
 
 	go s.receiveRegisterResponse()
@@ -42,7 +42,7 @@ func (s *RegisterClientStream) Process() (err error) {
 	for {
 		select {
 		case resp := <-s.respCh:
-			timer.Reset(computeTimerDuration(resp.GetTtl()))
+			timer.Reset(resp.GetTtl().AsDuration())
 		case err = <-s.errCh:
 			return
 		case <-timer.C:
@@ -54,7 +54,7 @@ func (s *RegisterClientStream) Process() (err error) {
 }
 
 func (s *RegisterClientStream) receiveRegisterResponse() {
-	klog.V(4).InfoS("Start receiving RegisterResponse", "stream", s.stream)
+	klog.V(4).InfoS("Run receiving RegisterResponse", "stream", s.stream)
 	defer klog.V(4).InfoS("End receiving RegisterResponse", "stream", s.stream)
 
 	for {

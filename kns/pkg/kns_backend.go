@@ -10,8 +10,8 @@ type (
 	KNSBackend interface {
 		Register(name, address string, ttl time.Duration) error
 		ChangeEventChannel() chan ChangeEvent
-		Resolve(name string) (*pb.ResolutionResult, error)
-		ResolveMultiple(names []string) ([]*pb.ResolutionResult, error)
+		Resolve(name string) (*pb.ResolveResult, error)
+		ResolveMultiple(names []string) ([]*pb.ResolveResult, error)
 	}
 
 	ChangeEvent struct {

@@ -74,20 +74,13 @@ func startKNSServer() *grpc.Server {
 
 	srv := grpc.NewServer(grpcOptions...)
 	reflection.Register(srv)
-	pb.RegisterNameServiceServer(srv, kns.NewNameServiceImpl(*ttl, mem.NewInMemBackend(),
-		kns.ResolverOption{
-			ListenerWorkerCount:            *listenerWorkers,
-			NotificationWorkerCount:        *notificationWorkers,
-			NotificationChannelBufferSize:  10,
-			NotificationChannelSendTimeout: 5 * time.Second,
-		}))
-
+	pb.RegisterNameServiceServer(srv, kns.NewNameServiceImpl(*ttl, mem.NewInMemBackend()))
 	lis, err := net.Listen(base.MustParseAddress(*address))
 	if err != nil {
 		klog.Fatalf("Fail to create listener for KNS server %v", err)
 	}
 
-	klog.InfoS("Start KNS server", "addr", lis.Addr())
+	klog.InfoS("Run KNS server", "addr", lis.Addr())
 	go func() {
 		if err := srv.Serve(lis); err != nil {
 			klog.Fatalf("fail to start load balancer service: %v", err)

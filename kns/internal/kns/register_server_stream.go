@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"k8s.io/klog/v2"
 
 	pb "qeco.dev/apis/kns/v1"
@@ -42,7 +42,7 @@ func NewRegisterServerStream(id string, stream pb.NameService_RegisterServer,
 }
 
 func (r *RegisterServerStream) Process() error {
-	klog.V(3).InfoS("Start processing stream", "stream", r.id)
+	klog.V(3).InfoS("Run processing stream", "stream", r.id)
 	defer func() {
 		klog.V(3).InfoS("Finish processing stream", "stream", r.id)
 	}()
@@ -70,7 +70,7 @@ func (r *RegisterServerStream) Process() error {
 }
 
 func (r *RegisterServerStream) receiveRequests() {
-	klog.V(4).InfoS("Start receiving RegisterRequest", "stream", r.id)
+	klog.V(4).InfoS("Run receiving RegisterRequest", "stream", r.id)
 	defer klog.V(4).InfoS("Finish receiving RegisterRequest", "stream", r.id)
 
 	for {
@@ -104,7 +104,7 @@ func (r *RegisterServerStream) sendRegisterResponse() (err error) {
 	}
 	resp := pb.RegisterResponse{
 		Id:  r.id,
-		Ttl: timestamppb.New(time.Now().Add(r.ttl)),
+		Ttl: durationpb.New(r.ttl),
 	}
 	if err = r.stream.Send(&resp); err != nil {
 		return

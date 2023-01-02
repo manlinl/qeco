@@ -26,8 +26,6 @@ type NameServiceClient interface {
 	Register(ctx context.Context, opts ...grpc.CallOption) (NameService_RegisterClient, error)
 	// Resolve a DNS name to a list of IP addresses.
 	Resolve(ctx context.Context, in *ResolveRequest, opts ...grpc.CallOption) (*ResolveResponse, error)
-	// StreamResolve allows caller to continuously subscribe/unsubscribe names to resolve.
-	StreamingResolve(ctx context.Context, opts ...grpc.CallOption) (NameService_StreamingResolveClient, error)
 }
 
 type nameServiceClient struct {
@@ -78,37 +76,6 @@ func (c *nameServiceClient) Resolve(ctx context.Context, in *ResolveRequest, opt
 	return out, nil
 }
 
-func (c *nameServiceClient) StreamingResolve(ctx context.Context, opts ...grpc.CallOption) (NameService_StreamingResolveClient, error) {
-	stream, err := c.cc.NewStream(ctx, &NameService_ServiceDesc.Streams[1], "/qeco.apis.kns.v1.NameService/StreamingResolve", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &nameServiceStreamingResolveClient{stream}
-	return x, nil
-}
-
-type NameService_StreamingResolveClient interface {
-	Send(*StreamingResolveRequest) error
-	Recv() (*StreamingResolveResponse, error)
-	grpc.ClientStream
-}
-
-type nameServiceStreamingResolveClient struct {
-	grpc.ClientStream
-}
-
-func (x *nameServiceStreamingResolveClient) Send(m *StreamingResolveRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *nameServiceStreamingResolveClient) Recv() (*StreamingResolveResponse, error) {
-	m := new(StreamingResolveResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // NameServiceServer is the server API for NameService service.
 // All implementations must embed UnimplementedNameServiceServer
 // for forward compatibility
@@ -117,8 +84,6 @@ type NameServiceServer interface {
 	Register(NameService_RegisterServer) error
 	// Resolve a DNS name to a list of IP addresses.
 	Resolve(context.Context, *ResolveRequest) (*ResolveResponse, error)
-	// StreamResolve allows caller to continuously subscribe/unsubscribe names to resolve.
-	StreamingResolve(NameService_StreamingResolveServer) error
 	mustEmbedUnimplementedNameServiceServer()
 }
 
@@ -131,9 +96,6 @@ func (UnimplementedNameServiceServer) Register(NameService_RegisterServer) error
 }
 func (UnimplementedNameServiceServer) Resolve(context.Context, *ResolveRequest) (*ResolveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Resolve not implemented")
-}
-func (UnimplementedNameServiceServer) StreamingResolve(NameService_StreamingResolveServer) error {
-	return status.Errorf(codes.Unimplemented, "method StreamingResolve not implemented")
 }
 func (UnimplementedNameServiceServer) mustEmbedUnimplementedNameServiceServer() {}
 
@@ -192,32 +154,6 @@ func _NameService_Resolve_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NameService_StreamingResolve_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(NameServiceServer).StreamingResolve(&nameServiceStreamingResolveServer{stream})
-}
-
-type NameService_StreamingResolveServer interface {
-	Send(*StreamingResolveResponse) error
-	Recv() (*StreamingResolveRequest, error)
-	grpc.ServerStream
-}
-
-type nameServiceStreamingResolveServer struct {
-	grpc.ServerStream
-}
-
-func (x *nameServiceStreamingResolveServer) Send(m *StreamingResolveResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *nameServiceStreamingResolveServer) Recv() (*StreamingResolveRequest, error) {
-	m := new(StreamingResolveRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 // NameService_ServiceDesc is the grpc.ServiceDesc for NameService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -234,12 +170,6 @@ var NameService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Register",
 			Handler:       _NameService_Register_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "StreamingResolve",
-			Handler:       _NameService_StreamingResolve_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
